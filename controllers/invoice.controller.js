@@ -10,21 +10,42 @@ const invoiceController = {
   getAllInvoice: (req, res) => {
     Invoice.getAll((err, results) => {
       if (err) return res.status(500).json({ message: 'Server error' });
-      res.json(results);
+      
+      // ✅ Convert null values untuk kompatibilitas frontend
+      const invoices = results.map(inv => ({
+        ...inv,
+        nama_toko: inv.nama_toko || 'Toko dihapus'
+      }));
+      
+      res.json(invoices);
     });
   },
   getInvoiceById: (req, res) => {
     Invoice.getById(req.params.id, (err, results) => {
       if (err) return res.status(500).json({ message: 'Server error' });
       if (results.length === 0) return res.status(404).json({ message: 'Invoice tidak ditemukan' });
-      res.json(results[0]);
+      
+      // ✅ Convert null values untuk kompatibilitas frontend
+      const invoice = {
+        ...results[0],
+        nama_toko: results[0].nama_toko || 'Toko dihapus'
+      };
+      
+      res.json(invoice);
     });
   },
   getInvoiceByOrderId: (req, res) => {
     Invoice.getByOrderId(req.params.orderId, (err, results) => {
       if (err) return res.status(500).json({ message: 'Server error' });
       if (results.length === 0) return res.status(404).json({ message: 'Invoice tidak ditemukan untuk order ini' });
-      res.json(results[0]);
+      
+      // ✅ Convert null values untuk kompatibilitas frontend
+      const invoice = {
+        ...results[0],
+        nama_toko: results[0].nama_toko || 'Toko dihapus'
+      };
+      
+      res.json(invoice);
     });
   },
   createInvoice: (req, res) => {

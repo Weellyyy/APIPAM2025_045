@@ -161,25 +161,49 @@ const barangController = {
         const barangId = req.params.id;
 
         Barang.getById(barangId, (err, results) => {
-            if (err || results.length === 0) {
+            if (err) {
+                console.error('[BARANG] Error getById:', err.message);
+                return res.status(500).json({ message: 'Server error' });
+            }
+            
+            if (results.length === 0) {
                 return res.status(404).json({ message: 'Barang tidak ditemukan' });
             }
 
             const barang = results[0];
 
-            // Hapus file gambar jika ada
-            if (barang.gambar_url) {
-                const filePath = path.join(__dirname, '..', barang.gambar_url);
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
-                    console.log(`[BARANG] File dihapus: ${filePath}`);
-                }
-            }
-
+            // ✅ PENTING: DELETE dari database dulu
             Barang.delete(barangId, (err) => {
                 if (err) {
-                    return res.status(500).json({ message: 'Gagal menghapus barang' });
+                    console.error('[BARANG] Error delete:', err.message);
+                    // Cek apakah error karena foreign key constraint
+                    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+                        return res.status(409).json({ 
+                            message: 'Barang tidak bisa dihapus karena masih digunakan di order',
+                            error: 'FOREIGN_KEY_CONSTRAINT'
+                        });
+                    }
+                    return res.status(500).json({ 
+                        message: 'Gagal menghapus barang',
+                        error: err.message 
+                    });
                 }
+
+                // ✅ Jika DELETE berhasil, baru hapus file gambar
+                if (barang.gambar_url) {
+                    const filePath = path.join(__dirname, '..', barang.gambar_url);
+                    if (fs.existsSync(filePath)) {
+                        try {
+                            fs.unlinkSync(filePath);
+                            console.log(`[BARANG] File dihapus: ${filePath}`);
+                        } catch (fileErr) {
+                            console.error('[BARANG] Error hapus file:', fileErr.message);
+                            // File error tidak menghalankan response sukses
+                        }
+                    }
+                }
+
+                console.log(`[BARANG] Barang ID ${barangId} berhasil dihapus`);
                 res.json({ message: 'Barang berhasil dihapus' });
             });
         });

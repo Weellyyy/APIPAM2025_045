@@ -31,9 +31,14 @@ CREATE TABLE orders (
     user_id INT,
     total DECIMAL(15,2) NOT NULL,
     status ENUM('pending','selesai','batal') DEFAULT 'pending',
-    FOREIGN KEY (toko_id) REFERENCES toko(toko_id),
+    FOREIGN KEY (toko_id) REFERENCES toko(toko_id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+-- PERBAIKAN: Jika tabel sudah ada, jalankan query ini untuk update foreign key toko_id:
+-- ALTER TABLE orders DROP FOREIGN KEY orders_ibfk_1;
+-- ALTER TABLE orders MODIFY toko_id INT NULL;
+-- ALTER TABLE orders ADD CONSTRAINT orders_ibfk_1 FOREIGN KEY (toko_id) REFERENCES toko(toko_id) ON DELETE SET NULL;
 
 -- Tabel Detail Order (item per order)
 CREATE TABLE order_detail (
